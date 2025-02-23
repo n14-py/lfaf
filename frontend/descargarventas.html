@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Descargar Ventas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.24/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        /* Estilos generales */
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+            color: black;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        body.dark-mode {
+            background-color: #1a1a1a;
+            color: white;
+        }
+
+        /* Barra de navegación */
+        .navbar {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .navbar .logo {
+            display: flex;
+            align-items: center;
+        }
+        .navbar .logo img {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+            border-radius: 50%;
+        }
+        .navbar .nombre-tienda {
+            font-size: 20px;
+            font-weight: 500;
+            text-align: center;
+            flex-grow: 1;
+        }
+        .menu-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+        .menu-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Menú desplegable */
+        .menu {
+            display: none;
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            z-index: 1000;
+            width: 200px;
+            transform: scale(0);
+            transform-origin: top right;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+        }
+        .menu.open {
+            display: block;
+            transform: scale(1);
+            opacity: 1;
+        }
+        .menu button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .menu button:hover {
+            background-color: #0056b3;
+            transform: translateX(5px);
+        }
+
+        /* Contenedor principal */
+        .container {
+            padding: 20px;
+            height: calc(100vh - 70px);
+            overflow-y: auto;
+        }
+
+        /* Filtros de consulta */
+        .filtros {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .filtros-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+        .filtros input, .filtros button {
+            padding: 12px 15px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            flex: 1 1 200px;
+        }
+        .filtros input:focus {
+            border-color: #0056b3;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0,123,255,0.5);
+        }
+        .filtros button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+        .filtros button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        #btn-hoy {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+        }
+        #btn-hoy:hover {
+            background-color: #138496;
+        }
+
+        /* Lista de ventas */
+        .ventas-list {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+        .ventas-list table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        .ventas-list th, .ventas-list td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .ventas-list th {
+            background-color: #007bff;
+            color: white;
+        }
+        .ventas-list tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        #total-ventas {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        /* Modo oscuro */
+        body.dark-mode .ventas-list {
+            background-color: #2d2d2d;
+        }
+        body.dark-mode .ventas-list tr:nth-child(even) {
+            background-color: #444;
+        }
+        body.dark-mode input,
+        body.dark-mode select,
+        body.dark-mode button {
+            background-color: #333;
+            color: white;
+            border-color: #555;
+        }
+        body.dark-mode input[type="date"] {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>');
+        }
+
+        /* Datepicker mejorado */
+        input[type="date"] {
+            position: relative;
+            padding-right: 30px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="22" viewBox="0 0 24 24" fill="none" stroke="%23007bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>') no-repeat right 10px center/15px auto;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            opacity: 0;
+            position: absolute;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .filtros {
+                flex-direction: column;
+            }
+            .filtros input, .filtros button {
+                width: 100%;
+                flex: none;
+            }
+            .navbar .nombre-tienda {
+                font-size: 18px;
+            }
+            .ventas-list {
+                padding: 10px;
+            }
+            .ventas-list th, .ventas-list td {
+                padding: 10px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">
+            <a href="index.html">
+                <img src="logo.png" alt="Logo">
+            </a>
+        </div>
+        <div class="nombre-tienda" id="nombre-tienda">Mi Tienda</div>
+        <button class="menu-button" onclick="toggleMenu()">&#9881;</button>
+    </div>
+
+    <div class="menu" id="menu">
+        <button onclick="window.location.href='dashboard.html'">Volver al Dashboard</button>
+        <button onclick="toggleDarkMode()">Modo Oscuro/Claro</button>
+        <button onclick="logout()">Cerrar Sesión</button>
+    </div>
+
+    <div class="container">
+        <div class="filtros">
+            <div class="filtros-group">
+                <input type="date" id="fechaInicio" required>
+                <input type="date" id="fechaFin" required>
+                <button onclick="consultarPorRango()"> Consultar Rango</button>
+                <button onclick="consultarHoy()" id="btn-hoy"> Consultar Hoy</button>
+            </div>
+            <div class="filtros-group">
+                <input type="number" id="mes" placeholder="Mes (1-12)" min="1" max="12" required>
+                <button onclick="consultarPorMes()"> Consultar Mes</button>
+                <button onclick="exportarPDF()"> Exportar PDF</button>
+            </div>
+        </div>
+
+        <div class="ventas-list">
+            <h2>Ventas</h2>
+            <table id="tabla-ventas">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio (Gs)</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <p id="total-ventas"><strong>Total: 0 Gs</strong></p>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = 'login.html';
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        document.getElementById('nombre-tienda').textContent = payload.tienda;
+
+        function toggleMenu() {
+            document.getElementById('menu').classList.toggle('open');
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+        }
+
+        function formatearPrecio(precio) {
+            return precio.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        async function consultarPorRango() {
+            const fechaInicio = document.getElementById('fechaInicio').value;
+            const fechaFin = document.getElementById('fechaFin').value;
+            if (!fechaInicio || !fechaFin) return alert("Seleccione ambas fechas");
+
+            const response = await fetch(`http://localhost:3000/ventas/rango/${payload.tienda}/${fechaInicio}/${fechaFin}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            mostrarVentas(await response.json());
+        }
+
+        function consultarHoy() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('fechaInicio').value = today;
+            document.getElementById('fechaFin').value = today;
+            consultarPorRango();
+        }
+
+        async function consultarPorMes() {
+            const mes = document.getElementById('mes').value;
+            if (!mes || mes < 1 || mes > 12) return alert("Mes inválido");
+
+            const response = await fetch(`http://localhost:3000/ventas/mes/${payload.tienda}/${mes}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            mostrarVentas(await response.json());
+        }
+
+        function mostrarVentas(ventas) {
+            const tbody = document.querySelector('#tabla-ventas tbody');
+            tbody.innerHTML = ventas.map(venta => `
+                <tr>
+                    <td>${venta.producto}</td>
+                    <td>${venta.cantidad}</td>
+                    <td>${formatearPrecio(venta.precio)} Gs</td>
+                    <td>${new Date(venta.fecha).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+
+            const total = ventas.reduce((sum, venta) => sum + (venta.cantidad * venta.precio), 0);
+            document.getElementById('total-ventas').innerHTML = `<strong>Total: ${formatearPrecio(total)} Gs</strong>`;
+        }
+
+        async function exportarPDF() {
+            const ventas = Array.from(document.querySelectorAll('#tabla-ventas tbody tr')).map(row => {
+                return Array.from(row.children).map(cell => cell.textContent);
+            });
+            if (ventas.length === 0) return alert("No hay ventas para descargar");
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(18);
+            doc.text("Reporte de Ventas", 10, 10);
+            
+            const logo = new Image();
+            logo.src = 'logo.png';
+            logo.onload = () => {
+                doc.addImage(logo, 'PNG', 10, 20, 30, 30);
+                doc.setFontSize(14);
+                doc.text(`Tienda: ${payload.tienda}`, 50, 30);
+            };
+
+            doc.autoTable({
+                startY: 50,
+                head: [['Producto', 'Cantidad', 'Precio (Gs)', 'Fecha']],
+                body: ventas,
+                theme: 'grid',
+                styles: { fontSize: 10 },
+                headStyles: { fillColor: '#007bff', textColor: '#fff' },
+                bodyStyles: { fillColor: '#f8f9fa' },
+                alternateRowStyles: { fillColor: '#e9ecef' }
+            });
+
+            doc.save('reporte_ventas.pdf');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

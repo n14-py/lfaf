@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* Estilos actualizados manteniendo estructura */
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+            color: black;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        body.dark-mode {
+            background-color: #1a1a1a;
+            color: white;
+        }
+
+        /* Barra de navegación actualizada */
+        .navbar {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .navbar .logo img {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+            border-radius: 50%;
+        }
+        .navbar .nombre-tienda {
+            font-size: 20px;
+            font-weight: 500;
+            text-align: center;
+            flex-grow: 1;
+        }
+        .menu-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+        .menu-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Menú desplegable actualizado */
+        .menu {
+            display: none;
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            z-index: 1000;
+            width: 200px;
+            transform: scale(0);
+            transform-origin: top right;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+        }
+        .menu.open {
+            display: block;
+            transform: scale(1);
+            opacity: 1;
+        }
+        .menu button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.3s ease;
+        }
+        .menu button:hover {
+            background-color: #0056b3;
+            transform: translateX(5px);
+        }
+
+        /* Contenedor principal actualizado */
+        .container {
+            padding: 20px;
+            height: calc(100vh - 70px);
+            overflow-y: auto;
+        }
+
+        /* Tarjetas actualizadas */
+        .card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Formularios actualizados */
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+
+        /* Lista de ventas actualizada */
+        .ventas-list {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+        .ventas-list table {
+            width: 100%;
+            min-width: 600px;
+            border-collapse: collapse;
+        }
+        .ventas-list th {
+            background-color: #007bff;
+            color: white;
+            padding: 12px;
+        }
+        .ventas-list td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        .ventas-list tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        /* Gráfico responsive */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        /* Modo oscuro actualizado */
+        body.dark-mode .card,
+        body.dark-mode .ventas-list {
+            background-color: #2d2d2d;
+        }
+        body.dark-mode input,
+        body.dark-mode select,
+        body.dark-mode button {
+            background-color: #444;
+            color: white;
+            border-color: #555;
+        }
+        body.dark-mode .ventas-list tr:nth-child(even) {
+            background-color: #444;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar .nombre-tienda {
+                font-size: 18px;
+            }
+            .menu {
+                width: 180px;
+            }
+            .card {
+                padding: 15px;
+            }
+            input, select, button {
+                padding: 10px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar .nombre-tienda {
+                font-size: 16px;
+            }
+            .menu {
+                width: 160px;
+                padding: 10px;
+            }
+            .ventas-list {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Barra de navegación (sin cambios) -->
+    <div class="navbar">
+        <div class="logo">
+            <a href="index.html">
+                <img src="logo.png" alt="Logo">
+            </a>
+        </div>
+        <div class="nombre-tienda" id="nombre-tienda">Mi Tienda</div>
+        <button class="menu-button" onclick="toggleMenu()">&#9881;</button>
+    </div>
+
+    <!-- Menú desplegable (sin cambios) -->
+    <div class="menu" id="menu">
+ 
+        <button onclick="window.location.href='descargarventas.html'">Consulta O Descargar Ventas en PDF</button>
+        <button onclick="toggleDarkMode()">Modo Oscuro/Claro</button>
+        <button onclick="logout()">Cerrar Sesión</button>
+    </div>
+
+    <!-- Contenedor principal (sin cambios) -->
+    <div class="container">
+        <!-- Tarjeta para registrar ventas (sin cambios) -->
+        <div class="card">
+            <h2>Registrar Venta</h2>
+            <input type="text" id="producto" placeholder="Producto" required>
+            <input type="number" id="cantidad" placeholder="Cantidad" required>
+            <input type="text" id="precio" placeholder="Precio (Gs)" required>
+            <button onclick="registrarVenta()">Registrar Venta</button>
+        </div>
+
+        <!-- Gráfico (sin cambios) -->
+        <div class="card">
+            <h2>Top 5 Productos Más Vendidos</h2>
+            <div class="chart-container">
+                <canvas id="chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Lista de ventas (sin cambios) -->
+        <div class="ventas-list" id="ventas-list">
+            <h2>Ventas del Día</h2>
+            <table id="tabla-ventas">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio (Gs)</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Las ventas se cargarán aquí -->
+                </tbody>
+            </table>
+            <p id="total-ventas"><strong>Total del día: 0 Gs</strong></p>
+        </div>
+    </div>
+
+    <!-- Script (sin cambios) -->
+    <script>
+
+// Obtener el token del localStorage
+const token = localStorage.getItem('token');
+
+// Verificar si el usuario está autenticado
+if (!token) {
+    window.location.href = 'login.html';
+}
+
+// Decodificar el token para obtener el nombre de la tienda
+const payload = JSON.parse(atob(token.split('.')[1]));
+document.getElementById('nombre-tienda').textContent = payload.tienda;
+
+// Función para alternar el menú
+function toggleMenu() {
+    const menu = document.getElementById('menu');
+    menu.classList.toggle('open');
+}
+
+// Función para cambiar entre modo oscuro y claro
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+}
+
+// Función para formatear el precio en guaraníes
+function formatearPrecio(precio) {
+    return precio.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+// Función para registrar una venta
+async function registrarVenta() {
+    const producto = document.getElementById('producto').value;
+    const cantidad = document.getElementById('cantidad').value;
+    const precio = document.getElementById('precio').value.replace(/\./g, '');
+
+    if (!producto || !cantidad || !precio) {
+        alert("Por favor, complete todos los campos.");
+        return;
+    }
+
+    const response = await fetch('http://localhost:3000/ventas', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ producto, cantidad, precio }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+        alert(data.mensaje);
+        consultarVentas();
+        actualizarGrafico();
+    } else {
+        alert(data.mensaje);
+    }
+}
+
+// Función para consultar ventas del día
+async function consultarVentas() {
+    const fecha = new Date().toISOString().split('T')[0];
+    const response = await fetch(`http://localhost:3000/ventas/dia/${payload.tienda}/${fecha}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    const ventas = await response.json();
+    const tbody = document.querySelector('#tabla-ventas tbody');
+    tbody.innerHTML = ventas.map(venta => `
+        <tr>
+            <td>${venta.producto}</td>
+            <td>${venta.cantidad}</td>
+            <td>${formatearPrecio(venta.precio)} Gs</td>
+            <td>${new Date(venta.fecha).toLocaleDateString()}</td>
+            <td>
+                <button onclick="editarVenta('${venta._id}')">Editar</button>
+                <button onclick="eliminarVenta('${venta._id}')">Eliminar</button>
+            </td>
+        </tr>
+    `).join('');
+
+    // Calcular el total del día
+    const total = ventas.reduce((sum, venta) => sum + (venta.cantidad * venta.precio), 0);
+    document.getElementById('total-ventas').innerHTML = `<strong>Total del día: ${formatearPrecio(total)} Gs</strong>`;
+}
+
+// Función para editar una venta
+async function editarVenta(id) {
+    const nuevoPrecio = prompt("Ingrese el nuevo precio (Gs):");
+    if (nuevoPrecio === null || nuevoPrecio.trim() === "") return;
+
+    const response = await fetch(`http://localhost:3000/ventas/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ precio: nuevoPrecio.replace(/\./g, '') }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+        alert(data.mensaje);
+        consultarVentas();
+        actualizarGrafico();
+    } else {
+        alert(data.mensaje);
+    }
+}
+
+// Función para eliminar una venta
+async function eliminarVenta(id) {
+    if (!confirm("¿Está seguro de eliminar esta venta?")) return;
+
+    const response = await fetch(`http://localhost:3000/ventas/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+        alert(data.mensaje);
+        consultarVentas();
+        actualizarGrafico();
+    } else {
+        alert(data.mensaje);
+    }
+}
+
+// Función para exportar a PDF
+function exportarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const margin = 10;
+
+    // Título del reporte
+    doc.setFontSize(18);
+    doc.text("Reporte de Ventas", margin, margin + 10);
+
+    // Tabla de ventas
+    doc.autoTable({
+        startY: margin + 20,
+        head: [['Producto', 'Cantidad', 'Precio (Gs)', 'Fecha']],
+        body: Array.from(document.querySelectorAll('#tabla-ventas tbody tr')).map(row => {
+            return Array.from(row.children).map(cell => cell.textContent);
+        }),
+        theme: 'grid',
+        styles: {
+            cellPadding: 3,
+            fontSize: 10,
+            valign: 'middle',
+            halign: 'center',
+        },
+        headStyles: {
+            fillColor: '#007bff',
+            textColor: '#fff',
+            fontStyle: 'bold',
+        },
+        bodyStyles: {
+            fillColor: '#f8f9fa',
+            textColor: '#333',
+        },
+        alternateRowStyles: {
+            fillColor: '#e9ecef',
+        },
+        tableLineColor: '#007bff',
+        tableLineWidth: 0.1,
+        margin: { top: margin + 20 },
+    });
+
+    // Guardar el PDF
+    doc.save('reporte_ventas.pdf');
+}
+
+// Función para cerrar sesión
+function logout() {
+    localStorage.removeItem('token');
+    window.location.href = 'login.html';
+}
+
+// Función para actualizar el gráfico
+let chart;
+async function actualizarGrafico() {
+    const response = await fetch(`http://localhost:3000/ventas/${payload.tienda}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    const ventas = await response.json();
+
+    const productos = {};
+    ventas.forEach(venta => {
+        if (productos[venta.producto]) {
+            productos[venta.producto] += venta.cantidad;
+        } else {
+            productos[venta.producto] = venta.cantidad;
+        }
+    });
+
+    // Limitar a los 5 productos más vendidos
+    const topProductos = Object.entries(productos)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+
+    const ctx = document.getElementById('chart').getContext('2d');
+    if (chart) chart.destroy();
+
+    // Colores aleatorios para cada producto
+    const colors = topProductos.map(() => {
+        return `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.6)`;
+    });
+
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: topProductos.map(p => p[0]),
+            datasets: [{
+                label: 'Cantidad Vendida',
+                data: topProductos.map(p => p[1]),
+                backgroundColor: colors,
+                borderColor: colors.map(color => color.replace('0.6', '1')),
+                borderWidth: 1,
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#e9ecef',
+                    },
+                    ticks: {
+                        color: '#333',
+                    }
+                },
+                x: {
+                    grid: {
+                        color: '#e9ecef',
+                    },
+                    ticks: {
+                        color: '#333',
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false,
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+        }
+    });
+}
+
+// Cargar ventas y gráfico al abrir el dashboard
+consultarVentas();
+actualizarGrafico();
+
+    </script>
+</body>
+</html>

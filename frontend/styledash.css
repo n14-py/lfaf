@@ -1,0 +1,148 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 90%;
+    margin: auto;
+    padding: 20px;
+}
+
+header {
+    background-color: #4CAF50;
+    padding: 15px 0;
+    text-align: center;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+header .header-content h1 {
+    color: white;
+    font-size: 2em;
+    margin: 0;
+}
+
+header nav a, header nav button {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    margin: 0 15px;
+}
+
+header nav a:hover, header nav button:hover {
+    color: #f8f8f8;
+    transition: color 0.3s ease;
+}
+
+header nav button {
+    background-color: #333;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+header nav button:hover {
+    background-color: #555;
+}
+
+section {
+    margin: 20px 0;
+    animation: fadeIn 1s ease-out;
+}
+
+h2 {
+    color: #4CAF50;
+}
+
+form input, form button {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+form button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: #45a049;
+}
+
+#ventas-ul, #ventas-registradas-ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    background-color: #fff;
+    color: #333;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+li:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+#modal-ajustes {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeInModal 0.3s ease-out;
+}
+
+#modal-ajustes .modal-content {
+    background-color: white;
+    padding: 20px;
+    margin: 15% auto;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 500px;
+}
+
+#cerrar-modal {
+    font-size: 1.5em;
+    cursor: pointer;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeInModal {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
