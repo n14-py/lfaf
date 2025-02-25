@@ -332,7 +332,9 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 
 
 
-
+app.listen(port, () => {
+    console.log(`Servidor ejecutándose en http://localhost:${port}`);
+});
 
 
 
