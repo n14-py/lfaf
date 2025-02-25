@@ -321,9 +321,9 @@
             const fechaFin = document.getElementById('fechaFin').value;
             if (!fechaInicio || !fechaFin) return alert("Seleccione ambas fechas");
 
-            const response = await fetch(`https://lfaf.onrender.com/rango/${payload.email}/${fechaInicio}/${fechaFin}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+        const response = await fetch(`https://lfaf.onrender.com/ventas/rango/${payload.email}/${fechaInicio}/${fechaFin}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+});
             mostrarVentas(await response.json());
         }
 
