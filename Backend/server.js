@@ -29,7 +29,7 @@ const ventaSchema = new mongoose.Schema({
     cantidad: Number,
     precio: Number,
     fecha: Date,
-    negocio: String
+    emailNegocio: String  // Cambiar 'negocio' por 'emailNegocio'
 });
 
 const Venta = mongoose.model('Venta', ventaSchema);
@@ -37,6 +37,11 @@ const Venta = mongoose.model('Venta', ventaSchema);
 // Definir el esquema y el modelo de usuario
 const usuarioSchema = new mongoose.Schema({
     email: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    telefono: {
         type: String,
         required: true,
         unique: true
@@ -61,17 +66,17 @@ const formatPrice = (precio) => {
 // Ruta para registrar usuarios
 app.post('/registro', async (req, res) => {
     try {
-        const { email, contrasena, tienda } = req.body;
+        const { email, telefono, contrasena, tienda } = req.body;
 
         // Validación básica para asegurarnos que los campos no sean vacíos
-        if (!email || !contrasena || !tienda) {
+        if (!email || !telefono || !contrasena || !tienda) {
             return res.status(400).json({ mensaje: "Todos los campos son requeridos." });
         }
 
-        // Verificar si el correo ya existe
-        const usuarioExistente = await Usuario.findOne({ email: email });
+        // Verificar si el correo o teléfono ya existen
+        const usuarioExistente = await Usuario.findOne({ $or: [{ email }, { telefono }] });
         if (usuarioExistente) {
-            return res.status(400).json({ mensaje: "El correo ya está registrado." });
+            return res.status(400).json({ mensaje: "El correo o teléfono ya está registrado." });
         }
 
         // Hashear la contraseña
@@ -81,6 +86,7 @@ app.post('/registro', async (req, res) => {
         // Crear el nuevo usuario
         const nuevoUsuario = new Usuario({
             email: email,
+            telefono: telefono,
             contrasena: hashedPassword,
             tienda: tienda
         });
@@ -98,18 +104,20 @@ app.post('/registro', async (req, res) => {
 
 // Ruta para hacer login
 app.post('/login', async (req, res) => {
-    const { email, contrasena } = req.body;
+    const { emailOrTelefono, contrasena } = req.body;
 
     // Validar que los campos no estén vacíos
-    if (!email || !contrasena) {
-        return res.status(400).json({ mensaje: 'Por favor complete ambos campos (email y contraseña).' });
+    if (!emailOrTelefono || !contrasena) {
+        return res.status(400).json({ mensaje: 'Por favor complete ambos campos (email/teléfono y contraseña).' });
     }
 
-    // Buscar al usuario por el email
-    const usuario = await Usuario.findOne({ email });
+    // Buscar al usuario por el email o teléfono
+    const usuario = await Usuario.findOne({
+        $or: [{ email: emailOrTelefono }, { telefono: emailOrTelefono }]
+    });
 
     if (!usuario) {
-        return res.status(400).json({ mensaje: 'Correo electrónico no encontrado.' });
+        return res.status(400).json({ mensaje: 'Correo electrónico o teléfono no encontrado.' });
     }
 
     // Verificar si la contraseña coincide
@@ -119,10 +127,14 @@ app.post('/login', async (req, res) => {
         return res.status(400).json({ mensaje: 'Contraseña incorrecta.' });
     }
 
-    // Generar un JWT
-    const token = jwt.sign({ id: usuario._id, tienda: usuario.tienda }, JWT_SECRET, { expiresIn: '1h' });
+    // Generar un JWT con el email, teléfono y nombre de la tienda
+    const token = jwt.sign(
+        { id: usuario._id, email: usuario.email, telefono: usuario.telefono, tienda: usuario.tienda },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+    );
 
-    // Si la contraseña es correcta, devolver el token y el nombre de la tienda
+    // Enviar la respuesta con el token y el nombre de la tienda
     res.json({
         mensaje: 'Login exitoso',
         tienda: usuario.tienda,
@@ -172,7 +184,7 @@ app.post('/ventas', authenticateJWT, async (req, res) => {
         cantidad,
         precio: parseInt(precioSinPuntos),
         fecha: new Date(), // Usar la fecha actual
-        negocio: req.user.tienda // Usar la tienda del usuario autenticado
+        emailNegocio: req.user.email // Usar el email del usuario autenticado
     });
 
     try {
@@ -184,8 +196,8 @@ app.post('/ventas', authenticateJWT, async (req, res) => {
 });
 
 // Ruta para obtener ventas por día (especificando la fecha)
-app.get('/ventas/dia/:negocio/:fecha', async (req, res) => {
-    const { negocio, fecha } = req.params;
+app.get('/ventas/dia/:emailNegocio/:fecha', async (req, res) => {
+    const { emailNegocio, fecha } = req.params;
 
     // Validar que la fecha tenga el formato correcto (YYYY-MM-DD)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
@@ -198,8 +210,8 @@ app.get('/ventas/dia/:negocio/:fecha', async (req, res) => {
 
     try {
         const ventas = await Venta.find({
-            negocio,
-            fecha: { $gte: startOfDay, $lte: endOfDay } // Buscar entre el inicio y fin del día en UTC
+            emailNegocio,  // Cambiar 'negocio' por 'emailNegocio'
+            fecha: { $gte: startOfDay, $lte: endOfDay }
         });
         res.json(ventas);
     } catch (err) {
@@ -208,8 +220,8 @@ app.get('/ventas/dia/:negocio/:fecha', async (req, res) => {
 });
 
 // Ruta para obtener ventas por rango de fechas
-app.get('/ventas/rango/:negocio/:fechaInicio/:fechaFin', async (req, res) => {
-    const { negocio, fechaInicio, fechaFin } = req.params;
+app.get('/ventas/rango/:emailNegocio/:fechaInicio/:fechaFin', async (req, res) => {
+    const { emailNegocio, fechaInicio, fechaFin } = req.params;
 
     // Validar que las fechas tengan el formato correcto (YYYY-MM-DD)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaInicio) || !/^\d{4}-\d{2}-\d{2}$/.test(fechaFin)) {
@@ -217,13 +229,13 @@ app.get('/ventas/rango/:negocio/:fechaInicio/:fechaFin', async (req, res) => {
     }
 
     // Convertir las fechas a objetos Date en UTC
-    const startDate = new Date(`${fechaInicio}T00:00:00.000Z`); // Inicio del rango en UTC
-    const endDate = new Date(`${fechaFin}T23:59:59.999Z`);      // Fin del rango en UTC
+    const startDate = new Date(`${fechaInicio}T00:00:00.000Z`);
+    const endDate = new Date(`${fechaFin}T23:59:59.999Z`);
 
     try {
         const ventas = await Venta.find({
-            negocio,
-            fecha: { $gte: startDate, $lte: endDate } // Buscar entre el inicio y fin del rango en UTC
+            emailNegocio,  // Cambiar 'negocio' por 'emailNegocio'
+            fecha: { $gte: startDate, $lte: endDate }
         });
         res.json(ventas);
     } catch (err) {
@@ -232,8 +244,8 @@ app.get('/ventas/rango/:negocio/:fechaInicio/:fechaFin', async (req, res) => {
 });
 
 // Ruta para obtener ventas por mes (especificando el mes)
-app.get('/ventas/mes/:negocio/:mes', async (req, res) => {
-    const { negocio, mes } = req.params;
+app.get('/ventas/mes/:emailNegocio/:mes', async (req, res) => {
+    const { emailNegocio, mes } = req.params;
 
     // Validar que el mes sea un número entre 1 y 12
     const mesNumero = parseInt(mes);
@@ -245,13 +257,13 @@ app.get('/ventas/mes/:negocio/:mes', async (req, res) => {
     const añoActual = new Date().getFullYear();
 
     // Crear fechas de inicio y fin del mes en UTC
-    const startOfMonth = new Date(Date.UTC(añoActual, mesNumero - 1, 1)); // Primer día del mes en UTC
-    const endOfMonth = new Date(Date.UTC(añoActual, mesNumero, 0, 23, 59, 59, 999)); // Último día del mes en UTC
+    const startOfMonth = new Date(Date.UTC(añoActual, mesNumero - 1, 1));
+    const endOfMonth = new Date(Date.UTC(añoActual, mesNumero, 0, 23, 59, 59, 999));
 
     try {
         const ventas = await Venta.find({
-            negocio,
-            fecha: { $gte: startOfMonth, $lte: endOfMonth } // Buscar entre el inicio y fin del mes en UTC
+            emailNegocio,  // Cambiar 'negocio' por 'emailNegocio'
+            fecha: { $gte: startOfMonth, $lte: endOfMonth }
         });
         res.json(ventas);
     } catch (err) {
@@ -260,10 +272,10 @@ app.get('/ventas/mes/:negocio/:mes', async (req, res) => {
 });
 
 // Ruta para obtener todos los datos de ventas de un negocio
-app.get('/ventas/:negocio', authenticateJWT, async (req, res) => {
-    const { negocio } = req.params;
+app.get('/ventas/:emailNegocio', authenticateJWT, async (req, res) => {
+    const { emailNegocio } = req.params;
     try {
-        const ventas = await Venta.find({ negocio });
+        const ventas = await Venta.find({ emailNegocio });  // Cambiar 'negocio' por 'emailNegocio'
         res.json(ventas);
     } catch (err) {
         res.status(400).json({ mensaje: 'Error al obtener las ventas', error: err });
@@ -314,6 +326,132 @@ app.delete('/ventas/:id', authenticateJWT, async (req, res) => {
 
 // Servir archivos estáticos (tu carpeta frontend)
 app.use(express.static(path.join(__dirname, '../frontend')));
+
+
+
+
+
+
+
+
+
+
+
+
+// ==================================================
+// V2: Gestión de Inventario y Autocompletado
+// ==================================================
+
+// Esquema de Producto
+const productoSchema = new mongoose.Schema({
+    nombre: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    descripcion: String,
+    precio: {
+        type: Number,
+        required: true
+    },
+    cantidad: {
+        type: Number,
+        required: true
+    },
+    emailNegocio: {
+        type: String,
+        required: true
+    }
+});
+
+const Producto = mongoose.model('Producto', productoSchema);
+
+// Ruta para agregar un producto al inventario
+app.post('/productos', authenticateJWT, async (req, res) => {
+    const { nombre, descripcion, precio, cantidad } = req.body;
+
+    if (!nombre || !precio || !cantidad) {
+        return res.status(400).json({ mensaje: "Nombre, precio y cantidad son requeridos." });
+    }
+
+    const nuevoProducto = new Producto({
+        nombre,
+        descripcion,
+        precio,
+        cantidad,
+        emailNegocio: req.user.email // Asociar el producto al negocio
+    });
+
+    try {
+        await nuevoProducto.save();
+        res.status(201).json({ mensaje: "Producto agregado al inventario." });
+    } catch (error) {
+        res.status(400).json({ mensaje: "Error al agregar el producto.", error });
+    }
+});
+
+// Ruta para obtener productos (autocompletado)
+app.get('/productos', authenticateJWT, async (req, res) => {
+    try {
+        const productos = await Producto.find({ emailNegocio: req.user.email });
+        res.json(productos);
+    } catch (error) {
+        res.status(400).json({ mensaje: "Error al obtener los productos.", error });
+    }
+});
+
+// Ruta para actualizar el stock al realizar una venta
+app.put('/productos/:id', authenticateJWT, async (req, res) => {
+    const { id } = req.params;
+    const { cantidadVendida } = req.body;
+
+    if (!cantidadVendida || cantidadVendida <= 0) {
+        return res.status(400).json({ mensaje: "Cantidad vendida inválida." });
+    }
+
+    try {
+        const producto = await Producto.findById(id);
+
+        if (!producto) {
+            return res.status(404).json({ mensaje: "Producto no encontrado." });
+        }
+
+        if (producto.cantidad < cantidadVendida) {
+            return res.status(400).json({ mensaje: "No hay suficiente stock." });
+        }
+
+        producto.cantidad -= cantidadVendida; // Descontar el stock
+        await producto.save();
+
+        res.json({ mensaje: "Stock actualizado correctamente.", producto });
+    } catch (error) {
+        res.status(400).json({ mensaje: "Error al actualizar el stock.", error });
+    }
+});
+
+// Ruta para buscar productos por nombre (autocompletado)
+app.get('/productos/buscar', authenticateJWT, async (req, res) => {
+    const { nombre } = req.query;
+
+    if (!nombre) {
+        return res.status(400).json({ mensaje: "Debe proporcionar un nombre para buscar." });
+    }
+
+    try {
+        const productos = await Producto.find({
+            emailNegocio: req.user.email,
+            nombre: { $regex: nombre, $options: 'i' } // Búsqueda insensible a mayúsculas/minúsculas
+        });
+
+        res.json(productos);
+    } catch (error) {
+        res.status(400).json({ mensaje: "Error al buscar productos.", error });
+    }
+});
+
+
+
+
 
 // Iniciar el servidor
 app.listen(port, () => {
