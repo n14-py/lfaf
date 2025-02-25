@@ -2,13 +2,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        /* Estilos actualizados manteniendo estructura */
+        /* Estilos generales */
         body {
             font-family: 'Roboto', sans-serif;
             margin: 0;
@@ -22,7 +22,7 @@
             color: white;
         }
 
-        /* Barra de navegación actualizada */
+        /* Barra de navegación */
         .navbar {
             background-color: #007bff;
             color: white;
@@ -63,7 +63,7 @@
             background-color: rgba(255, 255, 255, 0.1);
         }
 
-        /* Menú desplegable actualizado */
+        /* Menú desplegable */
         .menu {
             display: none;
             position: fixed;
@@ -103,14 +103,14 @@
             transform: translateX(5px);
         }
 
-        /* Contenedor principal actualizado */
+        /* Contenedor principal */
         .container {
             padding: 20px;
             height: calc(100vh - 70px);
             overflow-y: auto;
         }
 
-        /* Tarjetas actualizadas */
+        /* Tarjetas */
         .card {
             background-color: white;
             padding: 20px;
@@ -124,7 +124,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Formularios actualizados */
+        /* Formularios */
         input, select, button {
             width: 100%;
             padding: 12px;
@@ -145,7 +145,7 @@
             transform: translateY(-2px);
         }
 
-        /* Lista de ventas actualizada */
+        /* Lista de ventas */
         .ventas-list {
             background-color: white;
             padding: 20px;
@@ -178,7 +178,7 @@
             margin-top: 20px;
         }
 
-        /* Modo oscuro actualizado */
+        /* Modo oscuro */
         body.dark-mode .card,
         body.dark-mode .ventas-list {
             background-color: #2d2d2d;
@@ -226,7 +226,7 @@
     </style>
 </head>
 <body>
-    <!-- Barra de navegación (sin cambios) -->
+    <!-- Barra de navegación -->
     <div class="navbar">
         <div class="logo">
             <a href="index.html">
@@ -237,17 +237,16 @@
         <button class="menu-button" onclick="toggleMenu()">&#9881;</button>
     </div>
 
-    <!-- Menú desplegable (sin cambios) -->
+    <!-- Menú desplegable -->
     <div class="menu" id="menu">
- 
         <button onclick="window.location.href='descargarventas.html'">Consulta O Descargar Ventas en PDF</button>
         <button onclick="toggleDarkMode()">Modo Oscuro/Claro</button>
         <button onclick="logout()">Cerrar Sesión</button>
     </div>
 
-    <!-- Contenedor principal (sin cambios) -->
+    <!-- Contenedor principal -->
     <div class="container">
-        <!-- Tarjeta para registrar ventas (sin cambios) -->
+        <!-- Tarjeta para registrar ventas -->
         <div class="card">
             <h2>Registrar Venta</h2>
             <input type="text" id="producto" placeholder="Producto" required>
@@ -256,7 +255,7 @@
             <button onclick="registrarVenta()">Registrar Venta</button>
         </div>
 
-        <!-- Gráfico (sin cambios) -->
+        <!-- Gráfico -->
         <div class="card">
             <h2>Top 5 Productos Más Vendidos</h2>
             <div class="chart-container">
@@ -264,7 +263,7 @@
             </div>
         </div>
 
-        <!-- Lista de ventas (sin cambios) -->
+        <!-- Lista de ventas -->
         <div class="ventas-list" id="ventas-list">
             <h2>Ventas del Día</h2>
             <table id="tabla-ventas">
@@ -285,274 +284,282 @@
         </div>
     </div>
 
-    <!-- Script (sin cambios) -->
+    <!-- Script -->
     <script>
+        // Obtener el token del localStorage
+        const token = localStorage.getItem('token');
 
-// Obtener el token del localStorage
-const token = localStorage.getItem('token');
-
-// Verificar si el usuario está autenticado
-if (!token) {
-    window.location.href = 'login.html';
-}
-
-// Decodificar el token para obtener el nombre de la tienda
-const payload = JSON.parse(atob(token.split('.')[1]));
-document.getElementById('nombre-tienda').textContent = payload.tienda;
-
-// Función para alternar el menú
-function toggleMenu() {
-    const menu = document.getElementById('menu');
-    menu.classList.toggle('open');
-}
-
-// Función para cambiar entre modo oscuro y claro
-function toggleDarkMode() {
-    document.body.classList.toggle('dark-mode');
-}
-
-// Función para formatear el precio en guaraníes
-function formatearPrecio(precio) {
-    return precio.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-}
-
-// Función para registrar una venta
-async function registrarVenta() {
-    const producto = document.getElementById('producto').value;
-    const cantidad = document.getElementById('cantidad').value;
-    const precio = document.getElementById('precio').value.replace(/\./g, '');
-
-    if (!producto || !cantidad || !precio) {
-        alert("Por favor, complete todos los campos.");
-        return;
-    }
-
-    const response = await fetch('https://lfaf.onrender.com/ventas', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ producto, cantidad, precio }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-        alert(data.mensaje);
-        consultarVentas();
-        actualizarGrafico();
-    } else {
-        alert(data.mensaje);
-    }
-}
-
-// Función para consultar ventas del día
-async function consultarVentas() {
-    const fecha = new Date().toISOString().split('T')[0];
-    const response = await fetch(`https://lfaf.onrender.com/ventas/dia/${payload.tienda}/${fecha}`, {
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-    });
-
-    const ventas = await response.json();
-    const tbody = document.querySelector('#tabla-ventas tbody');
-    tbody.innerHTML = ventas.map(venta => `
-        <tr>
-            <td>${venta.producto}</td>
-            <td>${venta.cantidad}</td>
-            <td>${formatearPrecio(venta.precio)} Gs</td>
-            <td>${new Date(venta.fecha).toLocaleDateString()}</td>
-            <td>
-                <button onclick="editarVenta('${venta._id}')">Editar</button>
-                <button onclick="eliminarVenta('${venta._id}')">Eliminar</button>
-            </td>
-        </tr>
-    `).join('');
-
-    // Calcular el total del día
-    const total = ventas.reduce((sum, venta) => sum + (venta.cantidad * venta.precio), 0);
-    document.getElementById('total-ventas').innerHTML = `<strong>Total del día: ${formatearPrecio(total)} Gs</strong>`;
-}
-
-// Función para editar una venta
-async function editarVenta(id) {
-    const nuevoPrecio = prompt("Ingrese el nuevo precio (Gs):");
-    if (nuevoPrecio === null || nuevoPrecio.trim() === "") return;
-
-    const response = await fetch(`https://lfaf.onrender.com/ventas/${id}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ precio: nuevoPrecio.replace(/\./g, '') }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-        alert(data.mensaje);
-        consultarVentas();
-        actualizarGrafico();
-    } else {
-        alert(data.mensaje);
-    }
-}
-
-// Función para eliminar una venta
-async function eliminarVenta(id) {
-    if (!confirm("¿Está seguro de eliminar esta venta?")) return;
-
-    const response = await fetch(`https://lfaf.onrender.com/ventas/${id}`, {
-        method: 'DELETE',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-        alert(data.mensaje);
-        consultarVentas();
-        actualizarGrafico();
-    } else {
-        alert(data.mensaje);
-    }
-}
-
-// Función para exportar a PDF
-function exportarPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4');
-    const margin = 10;
-
-    // Título del reporte
-    doc.setFontSize(18);
-    doc.text("Reporte de Ventas", margin, margin + 10);
-
-    // Tabla de ventas
-    doc.autoTable({
-        startY: margin + 20,
-        head: [['Producto', 'Cantidad', 'Precio (Gs)', 'Fecha']],
-        body: Array.from(document.querySelectorAll('#tabla-ventas tbody tr')).map(row => {
-            return Array.from(row.children).map(cell => cell.textContent);
-        }),
-        theme: 'grid',
-        styles: {
-            cellPadding: 3,
-            fontSize: 10,
-            valign: 'middle',
-            halign: 'center',
-        },
-        headStyles: {
-            fillColor: '#007bff',
-            textColor: '#fff',
-            fontStyle: 'bold',
-        },
-        bodyStyles: {
-            fillColor: '#f8f9fa',
-            textColor: '#333',
-        },
-        alternateRowStyles: {
-            fillColor: '#e9ecef',
-        },
-        tableLineColor: '#007bff',
-        tableLineWidth: 0.1,
-        margin: { top: margin + 20 },
-    });
-
-    // Guardar el PDF
-    doc.save('reporte_ventas.pdf');
-}
-
-// Función para cerrar sesión
-function logout() {
-    localStorage.removeItem('token');
-    window.location.href = 'login.html';
-}
-
-// Función para actualizar el gráfico
-let chart;
-async function actualizarGrafico() {
-    const response = await fetch(`https://lfaf.onrender.com/ventas/${payload.tienda}`, {
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-    });
-    const ventas = await response.json();
-
-    const productos = {};
-    ventas.forEach(venta => {
-        if (productos[venta.producto]) {
-            productos[venta.producto] += venta.cantidad;
-        } else {
-            productos[venta.producto] = venta.cantidad;
+        // Verificar si el usuario está autenticado
+        if (!token) {
+            window.location.href = 'login.html';
         }
-    });
 
-    // Limitar a los 5 productos más vendidos
-    const topProductos = Object.entries(productos)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5);
+        // Decodificar el token para obtener el email y el nombre de la tienda
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const emailNegocio = payload.email; // Obtener el email del negocio
+        const nombreTienda = payload.tienda; // Obtener el nombre de la tienda
 
-    const ctx = document.getElementById('chart').getContext('2d');
-    if (chart) chart.destroy();
+        // Mostrar el nombre de la tienda en la barra de navegación
+        document.getElementById('nombre-tienda').textContent = nombreTienda;
 
-    // Colores aleatorios para cada producto
-    const colors = topProductos.map(() => {
-        return `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.6)`;
-    });
+        // Función para alternar el menú
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            menu.classList.toggle('open');
+        }
 
-    chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: topProductos.map(p => p[0]),
-            datasets: [{
-                label: 'Cantidad Vendida',
-                data: topProductos.map(p => p[1]),
-                backgroundColor: colors,
-                borderColor: colors.map(color => color.replace('0.6', '1')),
-                borderWidth: 1,
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: '#e9ecef',
-                    },
-                    ticks: {
-                        color: '#333',
-                    }
+        // Función para cambiar entre modo oscuro y claro
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
+
+        // Cargar preferencias
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+        }
+
+        // Función para formatear el precio en guaraníes
+        function formatearPrecio(precio) {
+            return precio.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        // Función para registrar una venta
+        async function registrarVenta() {
+            const producto = document.getElementById('producto').value;
+            const cantidad = document.getElementById('cantidad').value;
+            const precio = document.getElementById('precio').value.replace(/\./g, '');
+
+            if (!producto || !cantidad || !precio) {
+                alert("Por favor, complete todos los campos.");
+                return;
+            }
+
+            const response = await fetch('http://localhost:3000/ventas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
                 },
-                x: {
-                    grid: {
-                        color: '#e9ecef',
-                    },
-                    ticks: {
-                        color: '#333',
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false,
-                }
-            },
-            responsive: true,
-            maintainAspectRatio: false,
+                body: JSON.stringify({ producto, cantidad, precio }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(data.mensaje);
+                consultarVentas();
+                actualizarGrafico();
+            } else {
+                alert(data.mensaje);
+            }
         }
-    });
-}
 
-// Cargar ventas y gráfico al abrir el dashboard
-consultarVentas();
-actualizarGrafico();
+        // Función para consultar ventas del día
+        async function consultarVentas() {
+            const fecha = new Date().toISOString().split('T')[0];
+            const response = await fetch(`http://localhost:3000/ventas/dia/${emailNegocio}/${fecha}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
 
+            const ventas = await response.json();
+            const tbody = document.querySelector('#tabla-ventas tbody');
+            tbody.innerHTML = ventas.map(venta => `
+                <tr>
+                    <td>${venta.producto}</td>
+                    <td>${venta.cantidad}</td>
+                    <td>${formatearPrecio(venta.precio)} Gs</td>
+                    <td>${new Date(venta.fecha).toLocaleDateString()}</td>
+                    <td>
+                        <button onclick="editarVenta('${venta._id}')">Editar</button>
+                        <button onclick="eliminarVenta('${venta._id}')">Eliminar</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Calcular el total del día
+            const total = ventas.reduce((sum, venta) => sum + (venta.cantidad * venta.precio), 0);
+            document.getElementById('total-ventas').innerHTML = `<strong>Total del día: ${formatearPrecio(total)} Gs</strong>`;
+        }
+
+        // Función para editar una venta
+        async function editarVenta(id) {
+            const nuevoPrecio = prompt("Ingrese el nuevo precio (Gs):");
+            if (nuevoPrecio === null || nuevoPrecio.trim() === "") return;
+
+            const response = await fetch(`http://localhost:3000/ventas/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({ precio: nuevoPrecio.replace(/\./g, '') }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(data.mensaje);
+                consultarVentas();
+                actualizarGrafico();
+            } else {
+                alert(data.mensaje);
+            }
+        }
+
+        // Función para eliminar una venta
+        async function eliminarVenta(id) {
+            if (!confirm("¿Está seguro de eliminar esta venta?")) return;
+
+            const response = await fetch(`http://localhost:3000/ventas/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(data.mensaje);
+                consultarVentas();
+                actualizarGrafico();
+            } else {
+                alert(data.mensaje);
+            }
+        }
+
+        // Función para exportar a PDF
+        function exportarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const margin = 10;
+
+            // Título del reporte
+            doc.setFontSize(18);
+            doc.text("Reporte de Ventas", margin, margin + 10);
+
+            // Tabla de ventas
+            doc.autoTable({
+                startY: margin + 20,
+                head: [['Producto', 'Cantidad', 'Precio (Gs)', 'Fecha']],
+                body: Array.from(document.querySelectorAll('#tabla-ventas tbody tr')).map(row => {
+                    return Array.from(row.children).map(cell => cell.textContent);
+                }),
+                theme: 'grid',
+                styles: {
+                    cellPadding: 3,
+                    fontSize: 10,
+                    valign: 'middle',
+                    halign: 'center',
+                },
+                headStyles: {
+                    fillColor: '#007bff',
+                    textColor: '#fff',
+                    fontStyle: 'bold',
+                },
+                bodyStyles: {
+                    fillColor: '#f8f9fa',
+                    textColor: '#333',
+                },
+                alternateRowStyles: {
+                    fillColor: '#e9ecef',
+                },
+                tableLineColor: '#007bff',
+                tableLineWidth: 0.1,
+                margin: { top: margin + 20 },
+            });
+
+            // Guardar el PDF
+            doc.save('reporte_ventas.pdf');
+        }
+
+        // Función para cerrar sesión
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+
+        // Función para actualizar el gráfico
+        let chart;
+        async function actualizarGrafico() {
+            const response = await fetch(`http://localhost:3000/ventas/${emailNegocio}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+            const ventas = await response.json();
+
+            const productos = {};
+            ventas.forEach(venta => {
+                if (productos[venta.producto]) {
+                    productos[venta.producto] += venta.cantidad;
+                } else {
+                    productos[venta.producto] = venta.cantidad;
+                }
+            });
+
+            // Limitar a los 5 productos más vendidos
+            const topProductos = Object.entries(productos)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            const ctx = document.getElementById('chart').getContext('2d');
+            if (chart) chart.destroy();
+
+            // Colores aleatorios para cada producto
+            const colors = topProductos.map(() => {
+                return `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.6)`;
+            });
+
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topProductos.map(p => p[0]),
+                    datasets: [{
+                        label: 'Cantidad Vendida',
+                        data: topProductos.map(p => p[1]),
+                        backgroundColor: colors,
+                        borderColor: colors.map(color => color.replace('0.6', '1')),
+                        borderWidth: 1,
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#e9ecef',
+                            },
+                            ticks: {
+                                color: '#333',
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: '#e9ecef',
+                            },
+                            ticks: {
+                                color: '#333',
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false,
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                }
+            });
+        }
+
+        // Cargar ventas y gráfico al abrir el dashboard
+        consultarVentas();
+        actualizarGrafico();
     </script>
 </body>
 </html>
