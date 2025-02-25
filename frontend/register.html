@@ -286,10 +286,10 @@
 
     <!-- Menú desplegable -->
     <div class="menu" id="menu">
-        <button onclick="toggleDarkMode()"> Modo Oscuro</button>
-        <button onclick="window.location.href='contacto.html'"> Contacto</button>
-        <button onclick="window.location.href='nosotros.html'"> Quiénes Somos</button>
-        <button onclick="window.location.href='funcionamiento.html'"> Cómo Funciona</button>
+        <button onclick="toggleDarkMode()">Modo Oscuro</button>
+        <button onclick="window.location.href='contacto.html'">Contacto</button>
+        <button onclick="window.location.href='nosotros.html'">Quiénes Somos</button>
+        <button onclick="window.location.href='funcionamiento.html'">Cómo Funciona</button>
     </div>
 
     <!-- Contenido principal -->
@@ -299,6 +299,9 @@
             <form class="register-form" onsubmit="event.preventDefault(); registrar()">
                 <div class="input-group">
                     <input type="email" id="email" placeholder="Correo electrónico" required>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="telefono" placeholder="Número de teléfono" required>
                 </div>
                 <div class="input-group">
                     <input type="password" id="contrasena" placeholder="Contraseña" required>
@@ -346,17 +349,18 @@
         // Función de registro
         async function registrar() {
             const email = document.getElementById('email').value;
+            const telefono = document.getElementById('telefono').value;
             const contrasena = document.getElementById('contrasena').value;
             const tienda = document.getElementById('tienda').value;
             const message = document.getElementById('message');
 
             try {
-                const response = await fetch('https://lfaf.onrender.com/registro', {
+                const response = await fetch('http://localhost:3000/registro', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ email, contrasena, tienda }),
+                    body: JSON.stringify({ email, telefono, contrasena, tienda }),
                 });
 
                 const data = await response.json();
