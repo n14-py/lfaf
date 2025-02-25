@@ -341,7 +341,13 @@
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify({ producto, cantidad, precio }),
+                body: JSON.stringify({ 
+                    producto, 
+                    cantidad, 
+                    precio,
+                    emailUsuario: emailNegocio,
+                    negocio: nombreTienda
+                }),
             });
 
             const data = await response.json();
